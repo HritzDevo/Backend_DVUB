@@ -1,99 +1,91 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const multer = require('multer'); // Import multer
-const User = require('../models/User'); // We'll create this model later
+const multer = require('multer');
+const User = require('../models/User');
 const authenticateToken = require('../middleware/authMiddleware');
 const { uploadDocument } = require('../controllers/authControllers');
 
 const router = express.Router();
 
-// Set up multer storage and file handling
+// Set up multer storage
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'uploads/'); // Specify the folder where uploaded files will be stored
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname); // Create unique filenames
-    }
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
 });
 
-const upload = multer({ storage: storage }); // Create the multer upload object
+const upload = multer({ storage: storage });
 
 // Register Route
 router.post('/register', async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
-      // Check if user exists
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-          return res.status(400).json({ msg: "User already exists!" });
-      }
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ msg: "User already exists!" });
+    }
 
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(password, salt);
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-      // Save new user
-      const newUser = new User({
-          username,
-          email,
-          password: hashedPassword
-      });
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword
+    });
 
-      await newUser.save();
+    await newUser.save();
 
-      // Generate JWT Token
-      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-      res.json({ token });
+    res.json({ token });
   } catch (err) {
-      console.error(err.message);
-      res.status(500).send("Server error");
+    console.error(err.message);
+    res.status(500).send("Server error");
   }
-});
+}); // <<< ✅ Correctly closing /register here!
 
 // Login Route
 router.post('/login', async (req, res) => {
-    const { email, password } = req.body;
+  const { email, password } = req.body;
 
-    try {
-        // Check if user exists
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ msg: "Invalid credentials" });
-        }
-
-        // Check password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ msg: "Invalid credentials" });
-        }
-
-        // Generate JWT Token
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        res.json({ token });
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send("Server error");
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: "Invalid credentials" });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
 });
 
-// Protected route example
+// Protected Test Route
 router.get('/protected', authenticateToken, (req, res) => {
   res.json({ msg: `Hello, ${req.user.id}! You are authenticated! 🚀` });
 });
 
-// Upload Route - Now using multer for file upload
+// Upload Route
 router.post('/upload', authenticateToken, upload.single('documentFile'), uploadDocument);
 
-// Profile Route - Fetch User Info
+// Profile Route
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password'); // Exclude password from the response
-
+    const user = await User.findById(req.user.id).select('-password');
     if (!user) {
       return res.status(404).json({ msg: "User not found" });
     }

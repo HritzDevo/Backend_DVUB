@@ -3,15 +3,28 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+<<<<<<< HEAD
     "start": "node server.js"
   },
+=======
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+>>>>>>> 0b569782990f24821a1cde35b0e31beaf5a3f312
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+<<<<<<< HEAD
     "mongoose": "^8.13.2",
     "multer": "^1.4.5-lts.2"
+=======
+    "mongoose": "^8.13.2"
+>>>>>>> 0b569782990f24821a1cde35b0e31beaf5a3f312
   }
 }
