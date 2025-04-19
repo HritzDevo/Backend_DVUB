@@ -132,3 +132,13 @@ router.post('/change-password', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+
+const express = require('express');
+const router = express.Router();
+const authMiddleware = require('../middleware/authMiddleware');
+const { uploadDocument } = require('../controllers/authControllers');
+
+// Route to handle document upload
+router.post('/upload', authMiddleware, upload.single('documentFile'), uploadDocument);
+
+module.exports = router;
